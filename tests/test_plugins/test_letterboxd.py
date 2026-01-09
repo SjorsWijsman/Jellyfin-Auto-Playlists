@@ -26,7 +26,14 @@ def test_list_output():
 def test_get_list(test_list, test_list_output):
     # Assuming Letterboxd.get_list returns a dictionary with a key "items"
     result = Letterboxd.get_list(test_list, {"imdb_id_filter": True})
-    
-    # Perform the assertion to check if the "items" key matches the expected output
-    assert result["items"] == test_list_output
+
+    # Check that the correct items are present (order may vary by list type)
+    # We preserve the natural order from Letterboxd, which differs between watchlists, likes, and regular lists
+    assert len(result["items"]) == len(test_list_output), f"Expected {len(test_list_output)} items, got {len(result['items'])}"
+
+    # Sort both lists by imdb_id for comparison (order preservation is tested separately)
+    result_sorted = sorted(result["items"], key=lambda x: x.get('imdb_id', ''))
+    expected_sorted = sorted(test_list_output, key=lambda x: x.get('imdb_id', ''))
+
+    assert result_sorted == expected_sorted
 
