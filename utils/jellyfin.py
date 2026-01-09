@@ -82,8 +82,19 @@ class JellyfinClient:
         if playlist_id is None:
             # Playlist doesn't exist -> Make a new one
             logger.info("No matching playlist found for: " + list_name + ". Creating new playlist...")
-            res2 = requests.post(f'{self.server_url}/Playlists',headers={"X-Emby-Token": self.api_key}, params={"name": list_name, "userId": self.user_id, "mediaType": media_type, "isPublic": is_public})
+            # Use JSON body for better compatibility with is_public parameter
+            res2 = requests.post(
+                f'{self.server_url}/Playlists',
+                headers={"X-Emby-Token": self.api_key},
+                json={
+                    "Name": list_name,
+                    "UserId": self.user_id,
+                    "MediaType": media_type,
+                    "IsPublic": is_public
+                }
+            )
             playlist_id = res2.json()["Id"]
+            logger.info(f"Created new playlist: {list_name} (IsPublic: {is_public})")
 
         # Update playlist description and add tags so we can find it later
         if playlist_id is not None:
@@ -220,9 +231,17 @@ class JellyfinClient:
         res = requests.get(f'{self.server_url}/Users/{self.user_id}/Items',headers={"X-Emby-Token": self.api_key}, params={"Recursive": "true", "parentId": playlist_id})
         all_ids = [item["Id"] for item in res.json()["Items"]]
 
+        if not all_ids:
+            logger.info(f"Playlist {playlist_id} is already empty")
+            return
+
+        logger.info(f"Clearing {len(all_ids)} items from playlist {playlist_id}")
+
         # chunk ids into groups of 10
         all_ids = [all_ids[i:i + 10] for i in range(0, len(all_ids), 10)]
         for ids in all_ids:
-             requests.delete(f'{self.server_url}/Playlists/{playlist_id}/Items',headers={"X-Emby-Token": self.api_key}, params={"ids": ",".join(ids)})
+             response = requests.delete(f'{self.server_url}/Playlists/{playlist_id}/Items',headers={"X-Emby-Token": self.api_key}, params={"ids": ",".join(ids)})
+             if response.status_code not in [200, 204]:
+                 logger.error(f"Error clearing playlist items: {response.status_code} - {response.text}")
 
-        logger.info(f"Cleared playlist {playlist_id}")
+        logger.info(f"Successfully cleared playlist {playlist_id}")

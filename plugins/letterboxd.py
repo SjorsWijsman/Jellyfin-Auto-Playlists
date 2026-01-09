@@ -34,7 +34,9 @@ class Letterboxd(ListScraper):
             if watchlist:
                 url_format = "https://letterboxd.com/{list_id}{maybe_detail}/page/{page_number}/"
             else:
-                url_format = "https://letterboxd.com/{list_id}{maybe_detail}/by/release-earliest/page/{page_number}/"
+                # Don't use /by/release-earliest/ - this overrides the list's natural order
+                # Keep the list in the order specified by the list creator
+                url_format = "https://letterboxd.com/{list_id}{maybe_detail}/page/{page_number}/"
             maybe_detail = "" if watchlist or likeslist else "/detail"
             r = requests.get(
                 url_format.format(list_id=list_id, maybe_detail=maybe_detail, page_number=page_number),
