@@ -237,11 +237,14 @@ class JellyfinClient:
 
         logger.info(f"Clearing {len(all_ids)} items from playlist {playlist_id}")
 
-        # chunk ids into groups of 10
-        all_ids = [all_ids[i:i + 10] for i in range(0, len(all_ids), 10)]
-        for ids in all_ids:
-             response = requests.delete(f'{self.server_url}/Playlists/{playlist_id}/Items',headers={"X-Emby-Token": self.api_key}, params={"ids": ",".join(ids)})
-             if response.status_code not in [200, 204]:
-                 logger.error(f"Error clearing playlist items: {response.status_code} - {response.text}")
+        # Delete all items at once using entryIds parameter
+        response = requests.delete(
+            f'{self.server_url}/Playlists/{playlist_id}/Items',
+            headers={"X-Emby-Token": self.api_key},
+            params={"entryIds": ",".join(all_ids)}
+        )
 
-        logger.info(f"Successfully cleared playlist {playlist_id}")
+        if response.status_code not in [200, 204]:
+            logger.error(f"Error clearing playlist items: {response.status_code} - {response.text}")
+        else:
+            logger.info(f"Successfully cleared playlist {playlist_id}")
