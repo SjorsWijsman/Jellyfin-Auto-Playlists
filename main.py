@@ -78,33 +78,50 @@ def main(config):
                 # Match list items to jellyfin items
                 list_info = plugins[plugin_name].get_list(list_id, config['plugins'][plugin_name])
 
-                # Find jellyfin collection or create it
-                collection_id = jf_client.find_collection_with_name_or_create(
+                # Find jellyfin playlist or create it
+                playlist_id = jf_client.find_playlist_with_name_or_create(
                     list_name or list_info['name'],
                     list_id,
                     list_info.get("description", None),
-                    plugin_name
+                    plugin_name,
+                    media_type=config["jellyfin"].get("playlist_defaults", {}).get("media_type", "Video"),
+                    is_public=config["jellyfin"].get("playlist_defaults", {}).get("is_public", True)
                 )
 
-                if config["plugins"][plugin_name].get("clear_collection", False):
-                    # Optionally clear everything from the collection first
-                    jf_client.clear_collection(collection_id)
+                # Match all items to Jellyfin IDs, preserving order
+                logger.info(f"Processing list with {len(list_info['items'])} items")
+                matched_items = []
+                unmatched_items = []
 
-                # Add items to the collection
-                for item in list_info['items']:
-                    matched = jf_client.add_item_to_collection(
-                        collection_id,
+                for item in list_info['items']:  # ORDER PRESERVED!
+                    jellyfin_id = jf_client.match_item_to_jellyfin(
                         item,
                         year_filter=config["plugins"][plugin_name].get("year_filter", True),
                         jellyfin_query_parameters=config["jellyfin"].get("query_parameters", {})
                     )
-                    if not matched and js_client is not None:
+
+                    if jellyfin_id:
+                        matched_items.append(jellyfin_id)
+                    else:
+                        unmatched_items.append(item)
+
+                # Sync playlist with matched items in order
+                logger.info(f"Matched {len(matched_items)}/{len(list_info['items'])} items")
+                if matched_items:
+                    jf_client.sync_playlist(playlist_id, matched_items)
+                else:
+                    logger.warning(f"No items matched for playlist: {list_info['name']}")
+
+                # Request missing items via Jellyseerr
+                if js_client is not None and unmatched_items:
+                    logger.info(f"Requesting {len(unmatched_items)} missing items via Jellyseerr")
+                    for item in unmatched_items:
                         js_client.make_request(item)
 
-                # Add a poster image if collection doesn't have one
-                if not jf_client.has_poster(collection_id):
-                    logger.info("Collection has no poster - generating one")
-                    jf_client.make_poster(collection_id, list_info["name"])
+                # Add a poster image if playlist doesn't have one
+                if not jf_client.has_poster(playlist_id):
+                    logger.info("Playlist has no poster - generating one")
+                    jf_client.make_poster(playlist_id, list_info["name"])
 
 
 

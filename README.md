@@ -1,31 +1,28 @@
-# Jellyfin Auto Collections
+# Jellyfin Auto Playlists
 
-A tool to automatically make and update [jellyfin](https://jellyfin.org) collections based on internet lists such as IMDb and letterboxd. Also syncs with [Overseerr](https://overseerr.dev/)/[Jellyseerr](https://github.com/Fallenbagel/jellyseerr).
+A tool to automatically make and update [jellyfin](https://jellyfin.org) playlists based on internet lists such as IMDb and letterboxd. Preserves list ordering and syncs with [Overseerr](https://overseerr.dev/)/[Jellyseerr](https://github.com/Fallenbagel/jellyseerr).
 
 ```
-Getting collections list...
+Getting playlists list...
 
 found /r/TrueFilm Canon (1000 films) 015dee24c79dacfa80300afb7577fc37
 ************************************************
 
-Can't find A Trip to the Moon
-Can't find The Birth of a Nation
-Can't find Intolerance: Love&#039;s Struggle Throughout the Ages
-Can't find A Man There Was
-Can't find The Cabinet of Dr. Caligari
-Added Big Buck Bunny cc561c8b1d5da3a080cdb61ebe44d1a7
-Added Big Buck Bunny 2 0515533b716e8fe76d3b630f9b9b6d51
-Can't find Nosferatu
-Can't find Dr. Mabuse, the Gambler
-Can't find Häxan
-Added Big Buck Bunny 3 9a6b8002ef8f12a0611e92f5104d8b8e
-Can't find Sherlock, Jr.
-Can't find Greed
-Can't find The Last Laugh
-Can't find Battleship Potemkin
-Added Big Buck Bunny 5 98690cc73413b12593988687ee737a27
-Can't find Ménilmontant
+Processing list with 1000 items
+Item A Trip to the Moon (1902) not found in jellyfin
+Item The Birth of a Nation (1915) not found in jellyfin
+Item Intolerance: Love's Struggle Throughout the Ages (1916) not found in jellyfin
+Item A Man There Was (1917) not found in jellyfin
+Item The Cabinet of Dr. Caligari (1920) not found in jellyfin
+Matched Big Buck Bunny to Jellyfin item cc561c8b1d5da3a080cdb61ebe44d1a7
+Matched Big Buck Bunny 2 to Jellyfin item 0515533b716e8fe76d3b630f9b9b6d51
+Item Nosferatu (1922) not found in jellyfin
+Item Dr. Mabuse, the Gambler (1922) not found in jellyfin
+Item Häxan (1922) not found in jellyfin
+Matched Big Buck Bunny 3 to Jellyfin item 9a6b8002ef8f12a0611e92f5104d8b8e
 ...
+Matched 15/1000 items
+Added 15 items to playlist in order
 ```
 
 ![pic-selected-220609-1405-13](https://user-images.githubusercontent.com/13795113/172853971-8b5ab33b-58a9-4073-8a28-c471e9710cdc.png)
@@ -42,8 +39,8 @@ Can't find Ménilmontant
 - [The Criterion Channel](https://www.criterionchannel.com/new-collections)
 - [Listmania](https://www.listmania.org)
 - [BFI](https://www.bfi.org.uk/articles/type/lists)
-- Jellyfin API Queries - Make lists which match a particular filter from the [Jellyfin API](https://api.jellyfin.org/). See the [Wiki](https://github.com/ghomasHudson/Jellyfin-Auto-Collections/wiki/Plugin-%E2%80%90-Jellyfin-API) for some usage examples.
-- Radarr/Sonarr - Make collections from your *arr tags.
+- Jellyfin API Queries - Make playlists which match a particular filter from the [Jellyfin API](https://api.jellyfin.org/). See the [Wiki](https://github.com/ghomasHudson/Jellyfin-Auto-Collections/wiki/Plugin-%E2%80%90-Jellyfin-API) for some usage examples.
+- Radarr/Sonarr - Make playlists from your *arr tags.
 
 Please feel free to send pull requests with more!
 
@@ -65,9 +62,9 @@ The easiest way to get going is to use the provided `docker-compose.yml` configu
 
 ```yaml
 services:
-  jellyfin-auto-collections:
-    image: ghcr.io/ghomashudson/jellyfin-auto-collections:latest
-    container_name: jellyfin-auto-collections
+  jellyfin-auto-playlists:
+    image: ghcr.io/sjorswijsman/jellyfin-auto-playlists:latest
+    container_name: jellyfin-auto-playlists
     environment:
       - CRONTAB=0 0 * * *
       - TZ=America/New_York
@@ -75,7 +72,7 @@ services:
       - JELLYFIN_API_KEY=1a1111aa1a1a1aaaa11a11aa111aaa11
       - JELLYFIN_USER_ID=2b2222bb2b2b2bbbb22b22bb222bbb22
     volumes:
-      - ${CONFIG_DIR}/jellyfin-auto-collections/config:/app/config
+      - ${CONFIG_DIR}/jellyfin-auto-playlists/config:/app/config
 ```
 
 

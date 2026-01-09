@@ -31,5 +31,5 @@ jobs:
           platforms: linux/amd64, linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/jellyfin-auto-collections:latest
-            ghcr.io/${{ env.OWNER_LC }}/jellyfin-auto-collections:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/jellyfin-auto-playlists:latest
+            ghcr.io/${{ env.OWNER_LC }}/jellyfin-auto-playlists:${{ github.sha }}

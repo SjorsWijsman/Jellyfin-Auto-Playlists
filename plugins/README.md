@@ -1,6 +1,6 @@
 # List Scraper Plugins
 
-Each of these files implements the [base_plugin.py](https://github.com/ghomasHudson/Jellyfin-Auto-Collections/blob/master/utils/base_plugin.py) base class:
+Each of these files implements the [base_plugin.py](https://github.com/SjorsWijsman/Jellyfin-Auto-Playlists/blob/master/utils/base_plugin.py) base class:
 
 ```python
 import pluginlib
