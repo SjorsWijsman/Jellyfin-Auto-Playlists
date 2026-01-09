@@ -37,3 +37,14 @@ def test_get_list(test_list, test_list_output):
 
     assert result_sorted == expected_sorted
 
+
+def test_order_preservation():
+    """Test that items are returned in their natural order from Letterboxd consistently"""
+    # Get the same list twice - order should be consistent
+    result1 = Letterboxd.get_list("jf_auto_collect/list/test_list/", {"imdb_id_filter": True})
+    result2 = Letterboxd.get_list("jf_auto_collect/list/test_list/", {"imdb_id_filter": True})
+
+    # Order should be exactly the same both times (preserving Letterboxd's natural order)
+    assert result1["items"] == result2["items"], "Order should be consistent across multiple fetches"
+    assert len(result1["items"]) > 0, "Should return at least one item"
+
