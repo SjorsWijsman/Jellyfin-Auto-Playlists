@@ -78,18 +78,29 @@ class Letterboxd(ListScraper):
                 if config.get("imdb_id_filter", False) or 'release_year' not in movie:
                     logger.debug(f"Getting release year and imdb details for: {movie['title']}")
 
-                    # Find the imdb id and release year
-                    r = session.get(f"https://letterboxd.com{link}", headers={'User-Agent': 'Mozilla/5.0'})
-                    movie_soup = bs4.BeautifulSoup(r.text, 'html.parser')
+                    try:
+                        # Find the imdb id and release year
+                        r = session.get(f"https://letterboxd.com{link}", headers={'User-Agent': 'Mozilla/5.0'})
+                        movie_soup = bs4.BeautifulSoup(r.text, 'html.parser')
 
-                    imdb_id = movie_soup.find('a', href=lambda href: href and 'imdb.com/title' in href)
-                    movie_year = movie_soup.find("div", class_="details").find("span", class_="releasedate")
+                        # Get IMDB ID
+                        imdb_id = movie_soup.find('a', href=lambda href: href and 'imdb.com/title' in href)
+                        if imdb_id is not None:
+                            movie["imdb_id"] = imdb_id["href"].split("/title/")[1].split("/")[0]
 
-                    if imdb_id is not None:
-                        movie["imdb_id"] = imdb_id["href"].split("/title/")[1].split("/")[0]
+                        # Get release year - check if details div exists first
+                        details_div = movie_soup.find("div", class_="details")
+                        if details_div is not None:
+                            movie_year = details_div.find("span", class_="releasedate")
+                            if movie_year is not None:
+                                movie["release_year"] = movie_year.text.strip()
 
-                    if movie_year is not None:
-                        movie["release_year"] = movie_year.text.strip()
+                        # If release year still not found, log a warning
+                        if 'release_year' not in movie:
+                            logger.warning(f"Could not find release year for movie: '{movie['title']}' at {link}")
+
+                    except Exception as e:
+                        logger.error(f"Error fetching details for movie: '{movie['title']}' at {link}: {e}")
 
                 # If a movie doesn't have a year, that means that the movie is only just announced and we don't even know when it's coming out. We can easily ignore these because movies will have a year of release by the time they come out.
                 if 'release_year' in movie:
