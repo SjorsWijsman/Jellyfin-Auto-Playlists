@@ -88,11 +88,15 @@ class Letterboxd(ListScraper):
                         if imdb_id is not None:
                             movie["imdb_id"] = imdb_id["href"].split("/title/")[1].split("/")[0]
 
-                        # Get release year - check if details div exists first
-                        details_div = movie_soup.find("div", class_="details")
-                        if details_div is not None:
-                            movie_year = details_div.find("span", class_="releasedate")
-                            if movie_year is not None:
+                        # Get release year - try multiple possible locations
+                        # Structure: <div class="details"> -> <div class="productioninfo"> -> <span class="releasedate">
+                        movie_year = movie_soup.find("span", class_="releasedate")
+                        if movie_year is not None:
+                            # Extract year from the link text (e.g., <a href="/films/year/1993/">1993</a>)
+                            year_link = movie_year.find('a')
+                            if year_link is not None:
+                                movie["release_year"] = year_link.text.strip()
+                            else:
                                 movie["release_year"] = movie_year.text.strip()
 
                         # If release year still not found, log a warning
