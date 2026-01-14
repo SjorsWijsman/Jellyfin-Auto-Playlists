@@ -194,7 +194,18 @@ class JellyfinClient:
         if match is None:
             logger.warning(f"Item {item['title']} ({item.get('release_year','N/A')}) {item.get('imdb_id','')} not found in jellyfin")
             logger.debug(f"List Candidate: {item}")
-            logger.debug(f"JF Search: {res.json()['Items']}")
+
+            # Show what Jellyfin found (if anything) to help debug
+            search_results = res.json()['Items']
+            if search_results:
+                logger.debug(f"Jellyfin found {len(search_results)} results but none matched:")
+                for result in search_results[:3]:  # Show first 3 results
+                    result_imdb = result.get("ProviderIds", {}).get("Imdb", "no-imdb")
+                    result_year = result.get("ProductionYear", "no-year")
+                    logger.debug(f"  - '{result.get('Name')}' ({result_year}) IMDB:{result_imdb}")
+            else:
+                logger.debug(f"Jellyfin search returned no results for '{item['title']}'")
+
             return None
         else:
             item_id = match["Id"]
