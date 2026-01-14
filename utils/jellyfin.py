@@ -213,17 +213,39 @@ class JellyfinClient:
         # Clear existing items first
         self.clear_playlist(playlist_id)
 
-        # Add all items in order (batch operation)
-        ids_param = ",".join(item_ids_in_order)
-        try:
-            requests.post(
-                f'{self.server_url}/Playlists/{playlist_id}/Items',
-                headers={"X-Emby-Token": self.api_key},
-                params={"ids": ids_param, "userId": self.user_id}
-            )
-            logger.info(f"Added {len(item_ids_in_order)} items to playlist in order")
-        except Exception as e:
-            logger.error(f"Error adding items to playlist: {e}")
+        # Add items in batches to avoid URL length limits (chunk size of 50)
+        # This preserves order by adding batches sequentially
+        chunk_size = 50
+        total_added = 0
+
+        for i in range(0, len(item_ids_in_order), chunk_size):
+            chunk = item_ids_in_order[i:i + chunk_size]
+            ids_param = ",".join(chunk)
+
+            logger.debug(f"Adding batch {i//chunk_size + 1}/{(len(item_ids_in_order) + chunk_size - 1)//chunk_size}: {len(chunk)} items")
+
+            try:
+                response = requests.post(
+                    f'{self.server_url}/Playlists/{playlist_id}/Items',
+                    headers={"X-Emby-Token": self.api_key},
+                    params={"ids": ids_param, "userId": self.user_id}
+                )
+
+                # Check if the request was successful
+                if response.status_code in [200, 204]:
+                    total_added += len(chunk)
+                    logger.debug(f"Successfully added batch of {len(chunk)} items ({total_added}/{len(item_ids_in_order)})")
+                else:
+                    logger.error(f"Failed to add batch to playlist. Status: {response.status_code}, Response: {response.text}")
+                    logger.error(f"Failed batch IDs: {ids_param[:200]}...")
+
+            except Exception as e:
+                logger.error(f"Exception while adding batch to playlist: {e}")
+
+        if total_added == len(item_ids_in_order):
+            logger.info(f"Successfully added {total_added} items to playlist in order")
+        else:
+            logger.warning(f"Only added {total_added}/{len(item_ids_in_order)} items to playlist")
 
 
     def clear_playlist(self, playlist_id: str):
