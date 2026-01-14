@@ -270,14 +270,27 @@ class JellyfinClient:
 
         logger.info(f"Clearing {len(all_ids)} items from playlist {playlist_id}")
 
-        # Delete all items at once using entryIds parameter
-        response = requests.delete(
-            f'{self.server_url}/Playlists/{playlist_id}/Items',
-            headers={"X-Emby-Token": self.api_key},
-            params={"entryIds": ",".join(all_ids)}
-        )
+        # Delete items in chunks to avoid URL length limits (414 error)
+        chunk_size = 50
+        total_deleted = 0
 
-        if response.status_code not in [200, 204]:
-            logger.error(f"Error clearing playlist items: {response.status_code} - {response.text}")
-        else:
+        # Chunk the IDs
+        id_chunks = [all_ids[i:i + chunk_size] for i in range(0, len(all_ids), chunk_size)]
+
+        for chunk in id_chunks:
+            response = requests.delete(
+                f'{self.server_url}/Playlists/{playlist_id}/Items',
+                headers={"X-Emby-Token": self.api_key},
+                params={"entryIds": ",".join(chunk)}
+            )
+
+            if response.status_code in [200, 204]:
+                total_deleted += len(chunk)
+                logger.debug(f"Deleted {len(chunk)} items ({total_deleted}/{len(all_ids)})")
+            else:
+                logger.error(f"Error clearing playlist items: {response.status_code} - {response.text}")
+
+        if total_deleted == len(all_ids):
             logger.info(f"Successfully cleared playlist {playlist_id}")
+        else:
+            logger.warning(f"Only deleted {total_deleted}/{len(all_ids)} items from playlist")
