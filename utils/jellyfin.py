@@ -3,6 +3,7 @@ from loguru import logger
 from base64 import b64encode
 import json
 import concurrent.futures
+import unicodedata
 from .poster_generation import fetch_collection_posters, safe_download, create_mosaic, get_font
 
 
@@ -159,12 +160,18 @@ class JellyfinClient:
 
         item["media_type"] = self.imdb_to_jellyfin_type_map.get(item["media_type"], item["media_type"])
 
+        # Normalize title using Unicode NFKC normalization
+        # This converts special dashes (en-dash, em-dash) to regular hyphens
+        # Converts non-breaking spaces to regular spaces
+        # Keeps foreign language characters intact (é, ñ, 中, etc.)
+        search_title = unicodedata.normalize('NFKC', item["title"])
+
         params = {
             "enableTotalRecordCount": "false",
             "enableImages": "false",
             "Recursive": "true",
             "IncludeItemTypes": item["media_type"],
-            "searchTerm": item["title"],
+            "searchTerm": search_title,
             "fields": ["ProviderIds", "ProductionYear"]
         }
 
