@@ -3,6 +3,7 @@ from loguru import logger
 from base64 import b64encode
 import json
 import concurrent.futures
+import unicodedata
 from .poster_generation import fetch_collection_posters, safe_download, create_mosaic, get_font
 
 
@@ -159,18 +160,30 @@ class JellyfinClient:
 
         item["media_type"] = self.imdb_to_jellyfin_type_map.get(item["media_type"], item["media_type"])
 
-        params = {
-            "enableTotalRecordCount": "false",
-            "enableImages": "false",
-            "Recursive": "true",
-            "IncludeItemTypes": item["media_type"],
-            "searchTerm": item["title"],
-            "fields": ["ProviderIds", "ProductionYear"]
-        }
+        # Try original title first, then normalized title as fallback
+        search_titles = [item["title"]]
+        normalized_title = unicodedata.normalize('NFKC', item["title"])
+        if normalized_title != item["title"]:
+            search_titles.append(normalized_title)
 
-        params = {**params, **jellyfin_query_parameters}
+        res = None
+        for search_title in search_titles:
+            params = {
+                "enableTotalRecordCount": "false",
+                "enableImages": "false",
+                "Recursive": "true",
+                "IncludeItemTypes": item["media_type"],
+                "searchTerm": search_title,
+                "fields": ["ProviderIds", "ProductionYear"]
+            }
 
-        res = requests.get(f'{self.server_url}/Users/{self.user_id}/Items',headers={"X-Emby-Token": self.api_key}, params=params)
+            params = {**params, **jellyfin_query_parameters}
+
+            res = requests.get(f'{self.server_url}/Users/{self.user_id}/Items',headers={"X-Emby-Token": self.api_key}, params=params)
+
+            # If we got results, stop searching
+            if res.json()["Items"]:
+                break
 
         # Check if there's an exact imdb_id match first
         match = None
